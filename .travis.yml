@@ -1,0 +1,16 @@
+language: go
+
+go:
+  - "1.14"
+
+services:
+  - docker
+  - redis
+  - postgresql
+
+jobs:
+  include:
+
+    - stage: test
+      script: make test
+
