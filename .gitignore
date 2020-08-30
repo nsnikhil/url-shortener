@@ -1,0 +1,15 @@
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+.idea
+*.iml
+*.DS_Store
+vendor/
+*.out
+out
+
+*.env
