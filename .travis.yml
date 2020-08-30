@@ -5,12 +5,12 @@ go:
 
 services:
   - docker
-  - redis
+  - redis-server
   - postgresql
 
 jobs:
   include:
 
     - stage: test
-      script: make test
+      script: make ci-test
 

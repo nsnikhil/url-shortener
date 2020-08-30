@@ -52,6 +52,8 @@ test-cover-html:
 	go test ./... -coverprofile=out/coverage.out
 	go tool cover -html=out/coverage.out
 
+ci-test: copy-config init-db migrate test
+
 docker-build:
 	docker build -t nsnikhil/$(APP):$(APP_VERSION) .
 	docker rmi -f $$(docker images -f "dangling=true" -q)

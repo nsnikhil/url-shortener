@@ -1,5 +1,9 @@
 ## URL SHORTENER
 
+[![Build Status](https://travis-ci.org/nsnikhil/url-shortener.svg?branch=master)](https://travis-ci.org/nsnikhil/url-shortener)
+
+---
+
 ### Description
 A basic url shortener written in GO.
 
