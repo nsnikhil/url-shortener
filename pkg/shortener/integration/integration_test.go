@@ -22,16 +22,17 @@ import (
 
 const address = "http://127.0.0.1:8080"
 
-func TestScenarioOne(t *testing.T) {
+func TestShortenerAPI(t *testing.T) {
 	srv := getServer()
 	go srv.Start()
-	defer cleanUp(t)
 	waitForServer()
 
 	cl := getClient()
 
 	testPingRequest(t, cl)
 	testRedirectSuccess(t, cl)
+	testDuplication(t, cl)
+	testNotPresent(t, cl)
 }
 
 func testPingRequest(t *testing.T, cl *http.Client) {
@@ -46,18 +47,60 @@ func testPingRequest(t *testing.T, cl *http.Client) {
 	data, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	assert.Equal(t, "pong", string(data))
+	cleanUp(t)
 }
 
 func testRedirectSuccess(t *testing.T, cl *http.Client) {
-	shtReq := contract.ShortenRequest{URL: "wikipedia.com"}
+	shtReq := shortenRequest(t, "wikipedia.com")
+	shtResp := doShortenRequest(t, cl, shtReq)
+
+	fmt.Println(shtResp.ShortURL)
+
+	redReq := redirectRequest(t, shtResp.ShortURL)
+	redResp := doRedirectRequest(t, cl, redReq)
+
+	assert.Equal(t, http.StatusMovedPermanently, redResp.StatusCode)
+	assert.Equal(t, []string{"wikipedia.com"}, redResp.Header["Location"])
+	cleanUp(t)
+}
+
+func testDuplication(t *testing.T, cl *http.Client) {
+	shtReqOne := shortenRequest(t, "wikipedia.com")
+	shtRespOne := doShortenRequest(t, cl, shtReqOne)
+
+	shtReqTwo := shortenRequest(t, "wikipedia.com")
+	shtRespTwo := doShortenRequest(t, cl, shtReqTwo)
+
+	assert.Equal(t, shtRespOne.ShortURL, shtRespTwo.ShortURL)
+	cleanUp(t)
+}
+
+func testNotPresent(t *testing.T, cl *http.Client) {
+	redReq := redirectRequest(t, "127.0.0.1:8080/AreVAfnsk")
+	redResp := doRedirectRequest(t, cl, redReq)
+
+	d, err := ioutil.ReadAll(redResp.Body)
+	require.NoError(t, err)
+
+	assert.Equal(t, http.StatusInternalServerError, redResp.StatusCode)
+	assert.Equal(t, "sql: no rows in result set", string(d))
+
+	cleanUp(t)
+}
+
+func shortenRequest(t *testing.T, url string) *http.Request {
+	shtReq := contract.ShortenRequest{URL: url}
 	b, err := json.Marshal(shtReq)
 	require.NoError(t, err)
 
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/%s", address, "shorten"), bytes.NewBuffer(b))
 	require.NoError(t, err)
 
-	resp, err := cl.Do(req)
-	require.NoError(t, err)
+	return req
+}
+
+func doShortenRequest(t *testing.T, cl *http.Client, req *http.Request) contract.ShortenResponse {
+	resp := doHTTPRequest(t, cl, req)
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -68,14 +111,25 @@ func testRedirectSuccess(t *testing.T, cl *http.Client) {
 	err = json.Unmarshal(data, &shtResp)
 	require.NoError(t, err)
 
-	req, err = http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s", shtResp.ShortURL), nil)
+	return shtResp
+}
+
+func doRedirectRequest(t *testing.T, cl *http.Client, req *http.Request) *http.Response {
+	return doHTTPRequest(t, cl, req)
+}
+
+func doHTTPRequest(t *testing.T, cl *http.Client, req *http.Request) *http.Response {
+	resp, err := cl.Do(req)
 	require.NoError(t, err)
 
-	resp, err = cl.Do(req)
+	return resp
+}
+
+func redirectRequest(t *testing.T, shortURL string) *http.Request {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s", shortURL), nil)
 	require.NoError(t, err)
 
-	assert.Equal(t, http.StatusMovedPermanently, resp.StatusCode)
-	assert.Equal(t, []string{"wikipedia.com"}, resp.Header["Location"])
+	return req
 }
 
 func getServer() server.Server {
