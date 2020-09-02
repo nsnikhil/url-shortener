@@ -44,12 +44,12 @@ copy-config:
 
 test:
 	go clean -testcache
-	go test ./...
+	go test ./... -v
 
 test-cover-html:
 	go clean -testcache
 	mkdir -p out/
-	go test ./... -coverprofile=out/coverage.out
+	go test ./... -v -coverprofile=out/coverage.out
 	go tool cover -html=out/coverage.out
 
 ci-test: copy-config init-db migrate test

@@ -1,6 +1,6 @@
 module urlshortner
 
-go 1.14
+go 1.15
 
 require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
@@ -10,7 +10,6 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/lib/pq v1.8.0
 	github.com/magiconair/properties v1.8.1
-	github.com/newrelic/go-agent v3.8.1+incompatible
 	github.com/newrelic/go-agent/v3 v3.3.0
 	github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.0
 	github.com/newrelic/go-agent/v3/integrations/nrpq v1.1.0
