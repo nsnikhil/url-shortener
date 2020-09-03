@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/go-redis/redis/v8"
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"testing"

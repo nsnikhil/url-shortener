@@ -1,7 +1,7 @@
 package store_test
 
 import (
-	"github.com/bmizerany/assert"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"urlshortner/pkg/shortener/store"
 )
