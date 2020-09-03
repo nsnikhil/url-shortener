@@ -19,7 +19,7 @@ func RedirectHandler(lgr *zap.Logger, statsd *statsd.Client, svc *service.Servic
 			return
 		}
 
-		resp.Header().Add(locationHeader, longURL)
+		resp.Header().Set(locationHeader, longURL)
 		resp.WriteHeader(http.StatusMovedPermanently)
 
 		reportSuccess(redirectAPI, statsd)
