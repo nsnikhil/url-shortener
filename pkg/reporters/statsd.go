@@ -34,7 +34,7 @@ func (dsc *defaultStatsDClient) ReportFailure(bucket string) {
 	incBucket(bucket, failure, dsc.client)
 }
 
-func NewStatsDClient(client *statsd.Client) StatsDClient {
+func newStatsDClient(client *statsd.Client) StatsDClient {
 	return &defaultStatsDClient{
 		client: client,
 	}

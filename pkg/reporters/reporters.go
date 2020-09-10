@@ -28,6 +28,6 @@ func NewReporters(cfg config.Config) *Reporters {
 	return &Reporters{
 		logger: getLogger(cfg.GetEnv()),
 		nrApp:  getNewRelic(cfg.GetNewRelicConfig()),
-		sc:     NewStatsDClient(getStatsD(cfg.GetStatsDConfig())),
+		sc:     newStatsDClient(getStatsD(cfg.GetStatsDConfig())),
 	}
 }
