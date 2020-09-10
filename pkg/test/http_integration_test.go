@@ -1,4 +1,4 @@
-package integration_test
+package test_test
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"gopkg.in/alexcesaro/statsd.v2"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -21,13 +22,16 @@ import (
 	"urlshortner/pkg/store"
 )
 
-const address = "http://127.0.0.1:8080"
+const (
+	pingAddress    = "http://127.0.0.1:8080/ping"
+	shortenAddress = "http://127.0.0.1:8080/shorten"
+	longURL        = "wikipedia.com"
+	shortURL       = "127.0.0.1:8080/AreVAfnsk"
+)
 
 func TestShortenerAPI(t *testing.T) {
 	srv := getServer()
 	go srv.Start()
-
-	//waitForServer()
 
 	cl := getClient()
 
@@ -40,39 +44,31 @@ func TestShortenerAPI(t *testing.T) {
 }
 
 func testPingRequest(t *testing.T, cl *http.Client) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", address, "ping"), nil)
-	require.NoError(t, err)
-
-	resp, err := cl.Do(req)
-	require.NoError(t, err)
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	data, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-	assert.Equal(t, "pong", string(data))
+	req := getPingRequest(t)
+	resp := doPingRequest(t, cl, req)
+	assert.Equal(t, "pong", resp)
 }
 
 func testRedirectSuccess(t *testing.T, cl *http.Client) {
 	defer cleanUp(t)
 
-	shtReq := shortenRequest(t, "wikipedia.com")
+	shtReq := getShortenRequest(t, longURL)
 	shtResp := doShortenRequest(t, cl, shtReq)
 
-	redReq := redirectRequest(t, shtResp.ShortURL)
+	redReq := getRedirectRequest(t, shtResp.ShortURL)
 	redResp := doRedirectRequest(t, cl, redReq)
 
 	assert.Equal(t, http.StatusMovedPermanently, redResp.StatusCode)
-	assert.Equal(t, []string{"wikipedia.com"}, redResp.Header["Location"])
+	assert.Equal(t, []string{longURL}, redResp.Header["Location"])
 }
 
 func testDuplication(t *testing.T, cl *http.Client) {
 	defer cleanUp(t)
 
-	shtReqOne := shortenRequest(t, "wikipedia.com")
+	shtReqOne := getShortenRequest(t, longURL)
 	shtRespOne := doShortenRequest(t, cl, shtReqOne)
 
-	shtReqTwo := shortenRequest(t, "wikipedia.com")
+	shtReqTwo := getShortenRequest(t, longURL)
 	shtRespTwo := doShortenRequest(t, cl, shtReqTwo)
 
 	assert.Equal(t, shtRespOne.ShortURL, shtRespTwo.ShortURL)
@@ -81,7 +77,7 @@ func testDuplication(t *testing.T, cl *http.Client) {
 func testNotPresent(t *testing.T, cl *http.Client) {
 	defer cleanUp(t)
 
-	redReq := redirectRequest(t, "127.0.0.1:8080/AreVAfnsk")
+	redReq := getRedirectRequest(t, shortURL)
 	redResp := doRedirectRequest(t, cl, redReq)
 
 	d, err := ioutil.ReadAll(redResp.Body)
@@ -89,50 +85,6 @@ func testNotPresent(t *testing.T, cl *http.Client) {
 
 	assert.Equal(t, http.StatusInternalServerError, redResp.StatusCode)
 	assert.Equal(t, "sql: no rows in result set", string(d))
-}
-
-func shortenRequest(t *testing.T, url string) *http.Request {
-	shtReq := contract.ShortenRequest{URL: url}
-	b, err := json.Marshal(shtReq)
-	require.NoError(t, err)
-
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/%s", address, "shorten"), bytes.NewBuffer(b))
-	require.NoError(t, err)
-
-	return req
-}
-
-func doShortenRequest(t *testing.T, cl *http.Client, req *http.Request) contract.ShortenResponse {
-	resp := doHTTPRequest(t, cl, req)
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	data, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	var shtResp contract.ShortenResponse
-	err = json.Unmarshal(data, &shtResp)
-	require.NoError(t, err)
-
-	return shtResp
-}
-
-func doRedirectRequest(t *testing.T, cl *http.Client, req *http.Request) *http.Response {
-	return doHTTPRequest(t, cl, req)
-}
-
-func doHTTPRequest(t *testing.T, cl *http.Client, req *http.Request) *http.Response {
-	resp, err := cl.Do(req)
-	require.NoError(t, err)
-
-	return resp
-}
-
-func redirectRequest(t *testing.T, shortURL string) *http.Request {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s", shortURL), nil)
-	require.NoError(t, err)
-
-	return req
 }
 
 func getServer() server.Server {
@@ -153,13 +105,9 @@ func getClient() *http.Client {
 	}
 }
 
-func waitForServer() {
-	time.Sleep(time.Second)
-}
-
 func waitForServerWithRetry(cl *http.Client, retry int) {
 	ping := func(cl *http.Client) error {
-		resp, err := cl.Get(fmt.Sprintf("%s/%s", address, "ping"))
+		resp, err := cl.Get(pingAddress)
 		if err != nil {
 			return err
 		}
@@ -171,7 +119,7 @@ func waitForServerWithRetry(cl *http.Client, retry int) {
 		return nil
 	}
 
-	for i := 1; i <=retry; i++ {
+	for i := 1; i <= retry; i++ {
 		err := ping(cl)
 		if err == nil {
 			break
@@ -195,4 +143,67 @@ func cleanUp(t *testing.T) {
 
 	cmd := redis.FlushAll(context.Background())
 	require.NoError(t, cmd.Err())
+}
+
+func doShortenRequest(t *testing.T, cl *http.Client, req *http.Request) contract.ShortenResponse {
+	resp := doHTTPRequest(t, cl, req)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	data, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var shtResp contract.ShortenResponse
+	err = json.Unmarshal(data, &shtResp)
+	require.NoError(t, err)
+
+	return shtResp
+}
+
+func doPingRequest(t *testing.T, cl *http.Client, req *http.Request) string {
+	resp := doHTTPRequest(t, cl, req)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	data, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	return string(data)
+}
+
+func doRedirectRequest(t *testing.T, cl *http.Client, req *http.Request) *http.Response {
+	return doHTTPRequest(t, cl, req)
+}
+
+func doHTTPRequest(t *testing.T, cl *http.Client, req *http.Request) *http.Response {
+	resp, err := cl.Do(req)
+	require.NoError(t, err)
+
+	return resp
+}
+
+func getRedirectRequest(t *testing.T, shortURL string) *http.Request {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s", shortURL), nil)
+	require.NoError(t, err)
+
+	return req
+}
+
+func getPingRequest(t *testing.T) *http.Request {
+	return getHTTPRequest(t, http.MethodGet, pingAddress, nil)
+}
+
+func getShortenRequest(t *testing.T, url string) *http.Request {
+	shtReq := contract.ShortenRequest{URL: url}
+	b, err := json.Marshal(shtReq)
+	require.NoError(t, err)
+
+	return getHTTPRequest(t, http.MethodPost, shortenAddress, bytes.NewBuffer(b))
+}
+
+func getHTTPRequest(t *testing.T, method, url string, body io.Reader) *http.Request {
+	req, err := http.NewRequest(method, url, body)
+	require.NoError(t, err)
+
+	return req
 }
