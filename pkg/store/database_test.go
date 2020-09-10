@@ -5,7 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"testing"
-	"urlshortner/cmd/config"
+	"urlshortner/pkg/config"
 	"urlshortner/pkg/store"
 )
 

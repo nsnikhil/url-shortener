@@ -53,6 +53,7 @@ func NewConfig() Config {
 	viper.SetConfigName("local")
 	viper.SetConfigType("env")
 	viper.AddConfigPath("./")
+	viper.AddConfigPath("./../")
 	viper.AddConfigPath("./../../")
 	viper.AddConfigPath("./../../../")
 

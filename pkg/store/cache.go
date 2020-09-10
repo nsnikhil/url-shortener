@@ -5,7 +5,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 	"time"
-	"urlshortner/cmd/config"
+	"urlshortner/pkg/config"
 )
 
 type CacheHandler interface {

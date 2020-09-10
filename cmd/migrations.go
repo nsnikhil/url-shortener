@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 	"path/filepath"
 	"strings"
-	"urlshortner/cmd/config"
+	"urlshortner/pkg/config"
 	"urlshortner/pkg/store"
 )
 

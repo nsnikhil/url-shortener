@@ -30,7 +30,7 @@ require (
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	golang.org/x/sys v0.0.0-20200831180312-196b9ba8737a // indirect
 	google.golang.org/genproto v0.0.0-20200903010400-9bfcb5116336 // indirect
-	google.golang.org/grpc v1.31.1 // indirect
+	google.golang.org/grpc v1.32.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0
 	gopkg.in/ini.v1 v1.60.2 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect

@@ -5,7 +5,7 @@ import (
 	_ "github.com/newrelic/go-agent/v3/integrations/nrpq"
 	"go.uber.org/zap"
 	"time"
-	"urlshortner/cmd/config"
+	"urlshortner/pkg/config"
 )
 
 type DBHandler interface {

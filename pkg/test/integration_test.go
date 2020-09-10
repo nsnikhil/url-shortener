@@ -6,19 +6,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"gopkg.in/alexcesaro/statsd.v2"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
-	"urlshortner/cmd/config"
+	"urlshortner/pkg/app"
+	"urlshortner/pkg/config"
 	"urlshortner/pkg/http/contract"
-	"urlshortner/pkg/http/server"
 	"urlshortner/pkg/store"
 )
 
@@ -30,8 +28,7 @@ const (
 )
 
 func TestShortenerAPI(t *testing.T) {
-	srv := getServer()
-	go srv.Start()
+	go app.Start()
 
 	cl := getClient()
 
@@ -85,15 +82,6 @@ func testNotPresent(t *testing.T, cl *http.Client) {
 
 	assert.Equal(t, http.StatusInternalServerError, redResp.StatusCode)
 	assert.Equal(t, "sql: no rows in result set", string(d))
-}
-
-func getServer() server.Server {
-	return server.NewServer(
-		config.NewConfig(),
-		zap.NewNop(),
-		&newrelic.Application{},
-		&statsd.Client{},
-	)
 }
 
 func getClient() *http.Client {

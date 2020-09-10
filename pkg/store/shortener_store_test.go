@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 	"testing"
 	"time"
-	"urlshortner/cmd/config"
+	"urlshortner/pkg/config"
 	"urlshortner/pkg/store"
 )
 
