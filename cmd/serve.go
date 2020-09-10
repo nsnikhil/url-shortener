@@ -2,11 +2,11 @@ package main
 
 import (
 	"urlshortner/cmd/config"
-	"urlshortner/pkg/shortener/server"
+	server2 "urlshortner/pkg/http/server"
 )
 
 func serve() {
 	cfg := config.NewConfig()
 	rp := newReporters(cfg)
-	server.NewServer(cfg, rp.getLogger(), rp.getNewrelic(), rp.getStatsD()).Start()
+	server2.NewServer(cfg, rp.getLogger(), rp.getNewrelic(), rp.getStatsD()).Start()
 }

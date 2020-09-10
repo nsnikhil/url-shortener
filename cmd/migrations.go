@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"urlshortner/cmd/config"
-	"urlshortner/pkg/shortener/store"
+	"urlshortner/pkg/store"
 )
 
 const (
