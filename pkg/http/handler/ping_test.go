@@ -4,11 +4,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"gopkg.in/alexcesaro/statsd.v2"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"urlshortner/pkg/http/handler"
+	"urlshortner/pkg/reporters"
 )
 
 func TestPingHandler(t *testing.T) {
@@ -16,7 +16,11 @@ func TestPingHandler(t *testing.T) {
 	r, err := http.NewRequest(http.MethodGet, "/ping", nil)
 	require.NoError(t, err)
 
-	handler.PingHandler(zap.NewNop(), &statsd.Client{})(w, r)
+	mockStatsD := &reporters.MockStatsDClient{}
+	mockStatsD.On("ReportAttempt", "ping")
+	mockStatsD.On("ReportSuccess", "ping")
+
+	handler.PingHandler(zap.NewNop(), mockStatsD)(w, r)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "pong", w.Body.String())

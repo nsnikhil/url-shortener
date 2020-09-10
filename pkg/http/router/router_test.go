@@ -5,12 +5,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"gopkg.in/alexcesaro/statsd.v2"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"urlshortner/pkg/elongator"
 	router2 "urlshortner/pkg/http/router"
+	"urlshortner/pkg/reporters"
 	"urlshortner/pkg/shortener"
 )
 
@@ -18,7 +18,7 @@ func TestRouter(t *testing.T) {
 	r := router2.NewRouter(
 		zap.NewNop(),
 		&newrelic.Application{},
-		&statsd.Client{},
+		&reporters.MockStatsDClient{},
 		&shortener.MockShortener{},
 		&elongator.MockElongator{},
 	)

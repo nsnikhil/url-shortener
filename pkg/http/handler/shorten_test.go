@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"gopkg.in/alexcesaro/statsd.v2"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"urlshortner/pkg/http/contract"
 	"urlshortner/pkg/http/handler"
+	"urlshortner/pkg/reporters"
 	"urlshortner/pkg/shortener"
 )
 
@@ -37,7 +37,11 @@ func TestShortenHandler(t *testing.T) {
 				mockShortener := &shortener.MockShortener{}
 				mockShortener.On("Shorten", "veryLongUrl.com").Return("sht.ly/abc", nil)
 
-				handler.ShortenHandler(zap.NewNop(), &statsd.Client{}, mockShortener)(w, r)
+				mockStatsD := &reporters.MockStatsDClient{}
+				mockStatsD.On("ReportAttempt", "shorten")
+				mockStatsD.On("ReportSuccess", "shorten")
+
+				handler.ShortenHandler(zap.NewNop(), mockStatsD, mockShortener)(w, r)
 
 				return w.Body.String(), w.Code
 			},
@@ -53,7 +57,11 @@ func TestShortenHandler(t *testing.T) {
 
 				mockShortener := &shortener.MockShortener{}
 
-				handler.ShortenHandler(zap.NewNop(), &statsd.Client{}, mockShortener)(w, r)
+				mockStatsD := &reporters.MockStatsDClient{}
+				mockStatsD.On("ReportAttempt", "shorten")
+				mockStatsD.On("ReportFailure", "shorten")
+
+				handler.ShortenHandler(zap.NewNop(), mockStatsD, mockShortener)(w, r)
 
 				return w.Body.String(), w.Code
 			},
@@ -69,7 +77,11 @@ func TestShortenHandler(t *testing.T) {
 
 				mockShortener := &shortener.MockShortener{}
 
-				handler.ShortenHandler(zap.NewNop(), &statsd.Client{}, mockShortener)(w, r)
+				mockStatsD := &reporters.MockStatsDClient{}
+				mockStatsD.On("ReportAttempt", "shorten")
+				mockStatsD.On("ReportFailure", "shorten")
+
+				handler.ShortenHandler(zap.NewNop(), mockStatsD, mockShortener)(w, r)
 
 				return w.Body.String(), w.Code
 			},
@@ -90,7 +102,11 @@ func TestShortenHandler(t *testing.T) {
 				mockShortener := &shortener.MockShortener{}
 				mockShortener.On("Shorten", "veryLongUrl.com").Return("", errors.New("fail to shorten url"))
 
-				handler.ShortenHandler(zap.NewNop(), &statsd.Client{}, mockShortener)(w, r)
+				mockStatsD := &reporters.MockStatsDClient{}
+				mockStatsD.On("ReportAttempt", "shorten")
+				mockStatsD.On("ReportFailure", "shorten")
+
+				handler.ShortenHandler(zap.NewNop(), mockStatsD, mockShortener)(w, r)
 
 				return w.Body.String(), w.Code
 			},

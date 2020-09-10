@@ -5,10 +5,10 @@ import (
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3"
-	"gopkg.in/alexcesaro/statsd.v2"
 	"urlshortner/pkg/config"
 	"urlshortner/pkg/elongator"
 	"urlshortner/pkg/http/router"
+	"urlshortner/pkg/reporters"
 	"urlshortner/pkg/shortener"
 	"urlshortner/pkg/store"
 )
@@ -18,12 +18,12 @@ type services struct {
 	elongator elongator.Elongator
 }
 
-func initRouter(cfg config.Config, lgr *zap.Logger, newRelic *newrelic.Application, statsd *statsd.Client) *mux.Router {
+func initRouter(cfg config.Config, lgr *zap.Logger, newRelic *newrelic.Application, statsdClient reporters.StatsDClient) *mux.Router {
 	svc := initService(cfg, lgr)
 	return router.NewRouter(
 		lgr,
 		newRelic,
-		statsd,
+		statsdClient,
 		svc.shortener,
 		svc.elongator,
 	)

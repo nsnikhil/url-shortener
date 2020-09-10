@@ -3,25 +3,25 @@ package handler
 import (
 	"encoding/json"
 	"go.uber.org/zap"
-	"gopkg.in/alexcesaro/statsd.v2"
 	"net/http"
 	"urlshortner/pkg/http/contract"
+	"urlshortner/pkg/reporters"
 	"urlshortner/pkg/shortener"
 )
 
-func ShortenHandler(lgr *zap.Logger, statsd *statsd.Client, shortener shortener.Shortener) http.HandlerFunc {
+func ShortenHandler(lgr *zap.Logger, statsdClient reporters.StatsDClient, shortener shortener.Shortener) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		reportAttempt(shortenAPI, statsd)
+		statsdClient.ReportAttempt(shortenAPI)
 
 		var shortenReq contract.ShortenRequest
-		err := parseRequest(resp, req, &shortenReq, lgr, shortenAPI, statsd)
+		err := parseRequest(resp, req, &shortenReq, lgr, shortenAPI, statsdClient)
 		if err != nil {
 			return
 		}
 
 		shortURL, err := shortener.Shorten(shortenReq.URL)
 		if err != nil {
-			handleError(http.StatusInternalServerError, err, resp, false, lgr, shortenAPI, statsd)
+			handleError(http.StatusInternalServerError, err, resp, false, lgr, shortenAPI, statsdClient)
 			return
 		}
 
@@ -29,12 +29,12 @@ func ShortenHandler(lgr *zap.Logger, statsd *statsd.Client, shortener shortener.
 
 		data, err := json.Marshal(&shortenResp)
 		if err != nil {
-			handleError(http.StatusInternalServerError, err, resp, true, lgr, shortenAPI, statsd)
+			handleError(http.StatusInternalServerError, err, resp, true, lgr, shortenAPI, statsdClient)
 			return
 		}
 
 		writeResponse(http.StatusOK, data, resp, lgr)
 
-		reportSuccess(shortenAPI, statsd)
+		statsdClient.ReportSuccess(shortenAPI)
 	}
 }
