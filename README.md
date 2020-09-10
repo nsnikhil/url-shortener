@@ -9,6 +9,12 @@ A basic url shortener written in GO.
 
 ---
 
+### Setup
+```
+make setup
+```
+---
+
 ### Contributing
 
 1. Fork it (<https://github.com/nsnikhil/url-shortener>)
