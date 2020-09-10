@@ -1,7 +1,6 @@
 package router_test
 
 import (
-	"fmt"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,7 +48,6 @@ func TestRouter(t *testing.T) {
 
 				r.ServeHTTP(resp, req)
 
-				fmt.Println(resp)
 				return resp.Code
 			},
 		},
@@ -62,7 +60,6 @@ func TestRouter(t *testing.T) {
 
 				r.ServeHTTP(resp, req)
 
-				fmt.Println(resp)
 				return resp.Code
 			},
 		},
