@@ -1,7 +1,6 @@
 package store
 
 import (
-	"github.com/newrelic/go-agent/v3/newrelic"
 	"go.uber.org/zap"
 )
 
@@ -16,9 +15,7 @@ type ShortenerStore interface {
 type urlShortnerStore struct {
 	db    ShortenerDatabase
 	cache ShortenerCache
-
-	lgr      *zap.Logger
-	newRelic *newrelic.Application
+	lgr   *zap.Logger
 }
 
 func (uss *urlShortnerStore) Save(url, urlHash string) error {
