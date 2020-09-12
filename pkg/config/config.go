@@ -14,6 +14,7 @@ type Config struct {
 	shortenerConfig ShortenerConfig
 	redisConfig     RedisConfig
 	databaseConfig  DatabaseConfig
+	logConfig       LogConfig
 }
 
 func (c Config) GetServerConfig() ServerConfig {
@@ -47,6 +48,9 @@ func (c Config) GetRedisConfig() RedisConfig {
 func (c Config) GetDatabaseConfig() DatabaseConfig {
 	return c.databaseConfig
 }
+func (c Config) GetLogConfig() LogConfig {
+	return c.logConfig
+}
 
 func NewConfig() Config {
 	viper.AutomaticEnv()
@@ -71,5 +75,6 @@ func NewConfig() Config {
 		shortenerConfig: newShortenerConfig(),
 		redisConfig:     newRedisConfig(),
 		databaseConfig:  newDatabaseConfig(),
+		logConfig:       newLogConfig(),
 	}
 }

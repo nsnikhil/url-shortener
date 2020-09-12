@@ -26,7 +26,7 @@ func (rp *Reporters) GetStatsD() StatsDClient {
 
 func NewReporters(cfg config.Config) *Reporters {
 	return &Reporters{
-		logger: getLogger(cfg.GetEnv()),
+		logger: getLogger(cfg.GetLogConfig()),
 		nrApp:  getNewRelic(cfg.GetNewRelicConfig()),
 		sc:     newStatsDClient(getStatsD(cfg.GetStatsDConfig())),
 	}

@@ -13,3 +13,5 @@ vendor
 *.DS_Store
 *.env
 .git
+
+*.log
