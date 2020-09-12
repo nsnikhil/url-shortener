@@ -13,11 +13,11 @@ type Elongator interface {
 
 type defaultElongator struct {
 	lgr *zap.Logger
-	str *store.Store
+	str store.ShortenerStore
 }
 
 func (de *defaultElongator) Elongate(hash string) (string, error) {
-	longURL, err := de.str.GetShortnerStore().GetURL(hash)
+	longURL, err := de.str.GetURL(hash)
 	if err != nil {
 		return na, err
 	}
@@ -25,7 +25,7 @@ func (de *defaultElongator) Elongate(hash string) (string, error) {
 	return longURL, nil
 }
 
-func NewElongator(lgr *zap.Logger, str *store.Store) Elongator {
+func NewElongator(lgr *zap.Logger, str store.ShortenerStore) Elongator {
 	return &defaultElongator{
 		lgr: lgr,
 		str: str,

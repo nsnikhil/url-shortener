@@ -1,115 +1,64 @@
 package store_test
 
 import (
-	"context"
-	"database/sql"
 	"errors"
-	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"testing"
-	"time"
-	"urlshortner/pkg/config"
 	"urlshortner/pkg/store"
 )
 
 func TestShortnerStoreSave(t *testing.T) {
-	cfg := config.NewConfig()
-	lgr := zap.NewNop()
-
-	dbHandler := store.NewDBHandler(cfg.GetDatabaseConfig(), lgr)
-	cacheHandler := store.NewCacheHandler(cfg.GetRedisConfig(), lgr)
-
-	db, err := dbHandler.GetDB()
-	require.NoError(t, err)
-
-	cache, err := cacheHandler.GetCache()
-	require.NoError(t, err)
-
 	testCases := []struct {
-		name           string
-		actualResult   func() (int, error)
-		expectedResult int
-		expectedError  error
+		name          string
+		actualResult  func() error
+		expectedError error
 	}{
 		{
-			name: "test save single record in db and cache",
-			actualResult: func() (int, error) {
-				ss := store.NewShortnerStore(cache, db, lgr)
-				c, err := ss.Save("verLongURL.com", "sht.ly/abc")
-				truncateStore(t, db, cache)
-				return c, err
+			name: "test save record",
+			actualResult: func() error {
+				url := "wikipedia.com"
+				urlHash := "some-random-hash"
+
+				db := &store.MockShortenerDatabase{}
+				db.On("Save", url, urlHash).Return(nil)
+
+				cache := &store.MockShortenerCache{}
+				cache.On("Save", url, urlHash, 3600).Return(nil)
+
+				ss := store.NewShortenerStore(db, cache, zap.NewNop())
+
+				return ss.Save(url, urlHash)
 			},
-			expectedResult: 1,
-			expectedError:  nil,
+			expectedError: nil,
 		},
 		{
-			name: "test save single record in db and cache",
-			actualResult: func() (int, error) {
-				ss := store.NewShortnerStore(cache, db, lgr)
-				res := 0
+			name: "test save failure db return error",
+			actualResult: func() error {
+				url := "some-url"
+				urlHash := "some-random-hash"
 
-				c, err := ss.Save("verLongURL.com", "sht.ly/abc")
-				require.NoError(t, err)
-				res += c
+				db := &store.MockShortenerDatabase{}
+				db.On("Save", url, urlHash).Return(errors.New("url is empty"))
 
-				c, err = ss.Save("otherURL.com", "sht.ly/def")
-				require.NoError(t, err)
-				res += c
+				cache := &store.MockShortenerCache{}
 
-				c, err = ss.Save("thisURL.com", "sht.ly/ghi")
-				require.NoError(t, err)
-				res += c
+				ss := store.NewShortenerStore(db, cache, zap.NewNop())
 
-				c, err = ss.Save("thatURL.com", "sht.ly/jkl")
-				require.NoError(t, err)
-				res += c
-
-				truncateStore(t, db, cache)
-				return res, err
+				return ss.Save(url, urlHash)
 			},
-			expectedResult: 4,
-			expectedError:  nil,
-		},
-		{
-			name: "test save single failure when url is empty",
-			actualResult: func() (int, error) {
-				ss := store.NewShortnerStore(cache, db, lgr)
-				c, err := ss.Save("", "sht.ly/abc")
-				truncateStore(t, db, cache)
-				return c, err
-			},
-			expectedResult: 0,
-			expectedError:  errors.New("pq: new row for relation \"shortener\" violates check constraint \"shortener_url_check\""),
+			expectedError: errors.New("url is empty"),
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			res, err := testCase.actualResult()
-
-			assert.Equal(t, testCase.expectedResult, res)
-			if testCase.expectedError != nil {
-				assert.Equal(t, testCase.expectedError.Error(), err.Error())
-			}
+			assert.Equal(t, testCase.expectedError, testCase.actualResult())
 		})
 	}
 }
 
 func TestShortnerStoreGetURL(t *testing.T) {
-	cfg := config.NewConfig()
-	lgr := zap.NewNop()
-
-	dbHandler := store.NewDBHandler(cfg.GetDatabaseConfig(), lgr)
-	cacheHandler := store.NewCacheHandler(cfg.GetRedisConfig(), lgr)
-
-	db, err := dbHandler.GetDB()
-	require.NoError(t, err)
-
-	cache, err := cacheHandler.GetCache()
-	require.NoError(t, err)
-
 	testCases := []struct {
 		name           string
 		actualResult   func() (string, error)
@@ -117,54 +66,59 @@ func TestShortnerStoreGetURL(t *testing.T) {
 		expectedError  error
 	}{
 		{
-			name: "test fetch record from cache",
+			name: "test get record from cache",
 			actualResult: func() (string, error) {
-				ss := store.NewShortnerStore(cache, db, lgr)
+				url := "wikipedia.com"
+				urlHash := "some-random-hash"
 
-				_, err := ss.Save("verLongURL.com", "randomHash")
-				require.NoError(t, err)
-				time.Sleep(time.Millisecond)
+				db := &store.MockShortenerDatabase{}
 
-				longURL, err := ss.GetURL("randomHash")
+				cache := &store.MockShortenerCache{}
+				cache.On("Get", urlHash).Return(url, nil)
 
-				truncateStore(t, db, cache)
+				ss := store.NewShortenerStore(db, cache, zap.NewNop())
 
-				return longURL, err
+				return ss.GetURL(urlHash)
 			},
-			expectedResult: "verLongURL.com",
+			expectedResult: "wikipedia.com",
+			expectedError:  nil,
 		},
 		{
-			name: "test fetch record from db",
+			name: "test get record from db",
 			actualResult: func() (string, error) {
-				ss := store.NewShortnerStore(cache, db, lgr)
+				url := "wikipedia.com"
+				urlHash := "some-random-hash"
 
-				_, err := ss.Save("verLongURL.com", "randomHash")
-				require.NoError(t, err)
+				db := &store.MockShortenerDatabase{}
+				db.On("Get", urlHash).Return(url, nil)
 
-				time.Sleep(time.Millisecond)
-				require.NoError(t, cache.Del(context.Background(), "randomHash").Err())
+				cache := &store.MockShortenerCache{}
+				cache.On("Get", urlHash).Return("", errors.New("some error"))
 
-				longURL, err := ss.GetURL("randomHash")
+				ss := store.NewShortenerStore(db, cache, zap.NewNop())
 
-				truncateStore(t, db, cache)
-
-				return longURL, err
+				return ss.GetURL(urlHash)
 			},
-			expectedResult: "verLongURL.com",
+			expectedResult: "wikipedia.com",
+			expectedError:  nil,
 		},
 		{
-			name: "test fetch record failure",
+			name: "test get record failure",
 			actualResult: func() (string, error) {
-				ss := store.NewShortnerStore(cache, db, lgr)
+				urlHash := "some-random-hash"
 
-				longURL, err := ss.GetURL("randomHash")
+				db := &store.MockShortenerDatabase{}
+				db.On("Get", urlHash).Return("", errors.New("some error"))
 
-				truncateStore(t, db, cache)
+				cache := &store.MockShortenerCache{}
+				cache.On("Get", urlHash).Return("", errors.New("some error"))
 
-				return longURL, err
+				ss := store.NewShortenerStore(db, cache, zap.NewNop())
+
+				return ss.GetURL(urlHash)
 			},
 			expectedResult: "",
-			expectedError:  errors.New("sql: no rows in result set"),
+			expectedError:  errors.New("some error"),
 		},
 	}
 
@@ -176,91 +130,4 @@ func TestShortnerStoreGetURL(t *testing.T) {
 			assert.Equal(t, testCase.expectedError, err)
 		})
 	}
-}
-
-func TestShortnerStoreGetURLHash(t *testing.T) {
-	cfg := config.NewConfig()
-	lgr := zap.NewNop()
-
-	dbHandler := store.NewDBHandler(cfg.GetDatabaseConfig(), lgr)
-	cacheHandler := store.NewCacheHandler(cfg.GetRedisConfig(), lgr)
-
-	db, err := dbHandler.GetDB()
-	require.NoError(t, err)
-
-	cache, err := cacheHandler.GetCache()
-	require.NoError(t, err)
-
-	testCases := []struct {
-		name           string
-		actualResult   func() (string, error)
-		expectedResult string
-		expectedError  error
-	}{
-		{
-			name: "test fetch record from cache",
-			actualResult: func() (string, error) {
-				ss := store.NewShortnerStore(cache, db, lgr)
-
-				_, err := ss.Save("verLongURL.com", "randomHash")
-				require.NoError(t, err)
-				time.Sleep(time.Millisecond)
-
-				longURL, err := ss.GetURLHash("verLongURL.com")
-
-				truncateStore(t, db, cache)
-
-				return longURL, err
-			},
-			expectedResult: "randomHash",
-		},
-		{
-			name: "test fetch record from db",
-			actualResult: func() (string, error) {
-				ss := store.NewShortnerStore(cache, db, lgr)
-
-				_, err := ss.Save("verLongURL.com", "randomHash")
-				require.NoError(t, err)
-
-				time.Sleep(time.Millisecond)
-				require.NoError(t, cache.Del(context.Background(), "verLongURL.com").Err())
-
-				longURL, err := ss.GetURLHash("verLongURL.com")
-
-				truncateStore(t, db, cache)
-
-				return longURL, err
-			},
-			expectedResult: "randomHash",
-		},
-		{
-			name: "test fetch record failure",
-			actualResult: func() (string, error) {
-				ss := store.NewShortnerStore(cache, db, lgr)
-
-				longURL, err := ss.GetURLHash("verLongURL.com")
-
-				truncateStore(t, db, cache)
-
-				return longURL, err
-			},
-			expectedResult: "",
-			expectedError:  errors.New("sql: no rows in result set"),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			res, err := testCase.actualResult()
-
-			assert.Equal(t, testCase.expectedResult, res)
-			assert.Equal(t, testCase.expectedError, err)
-		})
-	}
-}
-
-func truncateStore(t *testing.T, db *sql.DB, cache *redis.Client) {
-	_, err := db.Exec("TRUNCATE shortener")
-	require.NoError(t, err)
-	require.NoError(t, cache.FlushAll(context.Background()).Err())
 }

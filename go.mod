@@ -4,10 +4,10 @@ go 1.15
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-redis/redis/v8 v8.0.0-beta.9
 	github.com/golang-migrate/migrate/v4 v4.12.2
-	github.com/gorilla/handlers v1.5.0
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.8.0

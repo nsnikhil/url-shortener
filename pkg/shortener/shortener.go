@@ -12,7 +12,8 @@ type Shortener interface {
 
 type defaultShortener struct {
 	logger *zap.Logger
-	store  *store.Store
+
+	store store.ShortenerStore
 
 	builder   URLBuilder
 	generator HashGenerator
@@ -29,7 +30,7 @@ func (ds *defaultShortener) Shorten(url string) (string, error) {
 		return "", err
 	}
 
-	_, err = ds.store.GetShortnerStore().Save(url, urlHash)
+	err = ds.store.Save(url, urlHash)
 	if err != nil {
 		return "", err
 	}
@@ -47,7 +48,7 @@ func isValidURL(urlStr string, lgr *zap.Logger) error {
 	return nil
 }
 
-func NewShortener(lgr *zap.Logger, str *store.Store, builder URLBuilder, generator HashGenerator) Shortener {
+func NewShortener(lgr *zap.Logger, str store.ShortenerStore, builder URLBuilder, generator HashGenerator) Shortener {
 	return &defaultShortener{
 		logger:    lgr,
 		store:     str,

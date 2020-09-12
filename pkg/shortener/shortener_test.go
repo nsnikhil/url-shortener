@@ -23,7 +23,7 @@ func TestShortenerServiceShorten(t *testing.T) {
 				shortURL := "sht.ly/MLReNfDWL"
 				longURL := "wikipedia.com"
 
-				mockStore := &store.MockShortnerStore{}
+				mockStore := &store.MockShortenerStore{}
 				mockStore.On("Save", longURL, urlHash).Return(1, nil)
 
 				mockHashGenerator := &shortener.MockHashGenerator{}
@@ -32,7 +32,7 @@ func TestShortenerServiceShorten(t *testing.T) {
 				mockURLBuilder := &shortener.MockURLBuilder{}
 				mockURLBuilder.On("Build", urlHash).Return(shortURL)
 
-				sht := shortener.NewShortener(zap.NewNop(), store.NewStore(mockStore), mockURLBuilder, mockHashGenerator)
+				sht := shortener.NewShortener(zap.NewNop(), mockStore, mockURLBuilder, mockHashGenerator)
 
 				return sht.Shorten(longURL)
 			},
@@ -45,7 +45,7 @@ func TestShortenerServiceShorten(t *testing.T) {
 				shortURL := "sht.ly/MLReNfDWL"
 				longURL := "wikipedia.com"
 
-				mockStore := &store.MockShortnerStore{}
+				mockStore := &store.MockShortenerStore{}
 				mockStore.On("Save", longURL, urlHash).Return(1, nil)
 
 				mockHashGenerator := &shortener.MockHashGenerator{}
@@ -54,7 +54,7 @@ func TestShortenerServiceShorten(t *testing.T) {
 				mockURLBuilder := &shortener.MockURLBuilder{}
 				mockURLBuilder.On("Build", urlHash).Return(shortURL)
 
-				sht := shortener.NewShortener(zap.NewNop(), store.NewStore(mockStore), mockURLBuilder, mockHashGenerator)
+				sht := shortener.NewShortener(zap.NewNop(), mockStore, mockURLBuilder, mockHashGenerator)
 
 				return sht.Shorten(longURL)
 			},
@@ -63,11 +63,11 @@ func TestShortenerServiceShorten(t *testing.T) {
 		{
 			name: "test shorten failure when url is invalid",
 			actualResult: func() (string, error) {
-				mockStore := &store.MockShortnerStore{}
+				mockStore := &store.MockShortenerStore{}
 				mockURLBuilder := &shortener.MockURLBuilder{}
 				mockHashGenerator := &shortener.MockHashGenerator{}
 
-				sht := shortener.NewShortener(zap.NewNop(), store.NewStore(mockStore), mockURLBuilder, mockHashGenerator)
+				sht := shortener.NewShortener(zap.NewNop(), mockStore, mockURLBuilder, mockHashGenerator)
 
 				return sht.Shorten("#@$%^")
 			},
@@ -79,12 +79,12 @@ func TestShortenerServiceShorten(t *testing.T) {
 			actualResult: func() (string, error) {
 				longURL := "wikipedia.com"
 
-				mockStore := &store.MockShortnerStore{}
+				mockStore := &store.MockShortenerStore{}
 				mockURLBuilder := &shortener.MockURLBuilder{}
 				mockHashGenerator := &shortener.MockHashGenerator{}
 				mockHashGenerator.On("Generate", longURL).Return("", errors.New("failed to generate hash"))
 
-				sht := shortener.NewShortener(zap.NewNop(), store.NewStore(mockStore), mockURLBuilder, mockHashGenerator)
+				sht := shortener.NewShortener(zap.NewNop(), mockStore, mockURLBuilder, mockHashGenerator)
 
 				return sht.Shorten("wikipedia.com")
 			},
@@ -98,7 +98,7 @@ func TestShortenerServiceShorten(t *testing.T) {
 				shortURL := "sht.ly/MLReNfDWL"
 				longURL := "wikipedia.com"
 
-				mockStore := &store.MockShortnerStore{}
+				mockStore := &store.MockShortenerStore{}
 				mockStore.On("Save", longURL, urlHash).Return(0, errors.New("failed to save"))
 
 				mockHashGenerator := &shortener.MockHashGenerator{}
@@ -107,7 +107,7 @@ func TestShortenerServiceShorten(t *testing.T) {
 				mockURLBuilder := &shortener.MockURLBuilder{}
 				mockURLBuilder.On("Build", urlHash).Return(shortURL)
 
-				sht := shortener.NewShortener(zap.NewNop(), store.NewStore(mockStore), mockURLBuilder, mockHashGenerator)
+				sht := shortener.NewShortener(zap.NewNop(), mockStore, mockURLBuilder, mockHashGenerator)
 
 				return sht.Shorten(longURL)
 			},

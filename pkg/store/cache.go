@@ -5,44 +5,47 @@ import (
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 	"time"
-	"urlshortner/pkg/config"
 )
 
-type CacheHandler interface {
-	GetCache() (*redis.Client, error)
+type ShortenerCache interface {
+	Save(url, urlHash string, ttl int) error
+	Get(urlHash string) (string, error)
 }
 
-type defaultCacheHandler struct {
-	cfg config.RedisConfig
-	lgr *zap.Logger
+type urlShortenerCache struct {
+	client *redis.Client
+	lgr    *zap.Logger
 }
 
-func (dh *defaultCacheHandler) GetCache() (*redis.Client, error) {
+func (usc *urlShortenerCache) Save(url, urlHash string, ttl int) error {
 	ctx := context.Background()
-	rdb := redis.NewClient(&redis.Options{
-		Addr:         dh.cfg.GetAddress(),
-		Password:     dh.cfg.GetPassword(),
-		DB:           dh.cfg.GetDB(),
-		MaxRetries:   dh.cfg.GetMaxRetry(),
-		DialTimeout:  time.Second * time.Duration(dh.cfg.GetDialTimeoutInSec()),
-		ReadTimeout:  time.Second * time.Duration(dh.cfg.GetReadTimeoutInSec()),
-		WriteTimeout: time.Second * time.Duration(dh.cfg.GetWriteTimeoutInSec()),
-		PoolSize:     dh.cfg.GetPoolSize(),
-		MinIdleConns: dh.cfg.GetMinIdleConnection(),
-	})
 
-	_, err := rdb.Ping(ctx).Result()
-	if err != nil {
-		dh.lgr.Error(err.Error())
-		return nil, err
+	cmd := usc.client.Set(ctx, urlHash, url, time.Second*time.Duration(ttl))
+	if cmd.Err() != nil {
+		usc.lgr.Error(cmd.Err().Error())
+		return cmd.Err()
 	}
 
-	return rdb, nil
+	return nil
 }
 
-func NewCacheHandler(cfg config.RedisConfig, lgr *zap.Logger) CacheHandler {
-	return &defaultCacheHandler{
-		cfg: cfg,
-		lgr: lgr,
+func (usc *urlShortenerCache) Get(urlHash string) (string, error) {
+	ctx := context.Background()
+
+	cmd := usc.client.Get(ctx, urlHash)
+
+	res, err := cmd.Result()
+	if err != nil {
+		usc.lgr.Error(err.Error())
+		return "", err
+	}
+
+	return res, nil
+}
+
+func NewShortenerCache(client *redis.Client, lgr *zap.Logger) ShortenerCache {
+	return &urlShortenerCache{
+		client: client,
+		lgr:    lgr,
 	}
 }

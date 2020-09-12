@@ -19,10 +19,10 @@ func TestElongatorElongate(t *testing.T) {
 		{
 			name: "test redirect success",
 			actualResult: func() (string, error) {
-				mockStore := &store.MockShortnerStore{}
+				mockStore := &store.MockShortenerStore{}
 				mockStore.On("GetURL", "MLReNfDWL").Return("wikipedia.com", nil)
 
-				el := elongator.NewElongator(zap.NewNop(), store.NewStore(mockStore))
+				el := elongator.NewElongator(zap.NewNop(), mockStore)
 
 				return el.Elongate("MLReNfDWL")
 			},
@@ -31,10 +31,10 @@ func TestElongatorElongate(t *testing.T) {
 		{
 			name: "test redirect failure",
 			actualResult: func() (string, error) {
-				mockStore := &store.MockShortnerStore{}
+				mockStore := &store.MockShortenerStore{}
 				mockStore.On("GetURL", "MLReNfDWL").Return("na", errors.New("not found"))
 
-				el := elongator.NewElongator(zap.NewNop(), store.NewStore(mockStore))
+				el := elongator.NewElongator(zap.NewNop(), mockStore)
 
 				return el.Elongate("MLReNfDWL")
 			},

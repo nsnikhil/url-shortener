@@ -1,8 +1,8 @@
 package router
 
 import (
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/newrelic/go-agent/v3/integrations/nrgorilla"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"go.uber.org/zap"
@@ -19,14 +19,18 @@ const (
 	redirectPath = "/{hash_code}"
 )
 
-func NewRouter(lgr *zap.Logger, newRelic *newrelic.Application, statsdClient reporters.StatsDClient, shortener shortener.Shortener, elongator elongator.Elongator) *mux.Router {
-	r := mux.NewRouter()
-	r.Use(nrgorilla.Middleware(newRelic))
-	r.Use(handlers.RecoveryHandler())
+func NewRouter(lgr *zap.Logger, newRelic *newrelic.Application, statsdClient reporters.StatsDClient, shortener shortener.Shortener, elongator elongator.Elongator) http.Handler {
+	return getChiRouter(lgr, newRelic, statsdClient, shortener, elongator)
+}
 
-	r.HandleFunc(pingPath, handler.PingHandler(lgr, statsdClient)).Methods(http.MethodGet)
-	r.HandleFunc(shortenPath, handler.ShortenHandler(lgr, statsdClient, shortener)).Methods(http.MethodPost)
-	r.HandleFunc(redirectPath, handler.RedirectHandler(lgr, statsdClient, elongator)).Methods(http.MethodGet)
+func getChiRouter(lgr *zap.Logger, newRelic *newrelic.Application, statsdClient reporters.StatsDClient, shortener shortener.Shortener, elongator elongator.Elongator) *chi.Mux {
+	r := chi.NewRouter()
+	r.Use(middleware.Recoverer)
+	r.Use(nrgorilla.Middleware(newRelic))
+
+	r.Get(pingPath, handler.PingHandler(lgr, statsdClient))
+	r.Post(shortenPath, handler.ShortenHandler(lgr, statsdClient, shortener))
+	r.Get(redirectPath, handler.RedirectHandler(lgr, statsdClient, elongator))
 
 	return r
 }

@@ -2,26 +2,44 @@ package store
 
 import "github.com/stretchr/testify/mock"
 
-type MockShortnerStore struct {
+type MockShortenerDatabase struct {
 	mock.Mock
 }
 
-func (mss *MockShortnerStore) Save(url, urlHash string) (int, error) {
-	args := mss.Called(url, urlHash)
-	return args.Int(0), args.Error(1)
+func (msd *MockShortenerDatabase) Save(url, urlHash string) error {
+	args := msd.Called(url, urlHash)
+	return args.Error(0)
 }
 
-func (mss *MockShortnerStore) GetURL(urlHash string) (string, error) {
+func (msd *MockShortenerDatabase) Get(urlHash string) (string, error) {
+	args := msd.Called(urlHash)
+	return args.String(0), args.Error(1)
+}
+
+type MockShortenerCache struct {
+	mock.Mock
+}
+
+func (msd *MockShortenerCache) Save(url, urlHash string, ttl int) error {
+	args := msd.Called(url, urlHash, ttl)
+	return args.Error(0)
+}
+
+func (msd *MockShortenerCache) Get(urlHash string) (string, error) {
+	args := msd.Called(urlHash)
+	return args.String(0), args.Error(1)
+}
+
+type MockShortenerStore struct {
+	mock.Mock
+}
+
+func (mss *MockShortenerStore) Save(url, urlHash string) error {
+	args := mss.Called(url, urlHash)
+	return args.Error(1)
+}
+
+func (mss *MockShortenerStore) GetURL(urlHash string) (string, error) {
 	args := mss.Called(urlHash)
 	return args.String(0), args.Error(1)
-}
-
-func (mss *MockShortnerStore) GetURLHash(url string) (string, error) {
-	args := mss.Called(url)
-	return args.String(0), args.Error(1)
-}
-
-func (mss *MockShortnerStore) Delete(url, urlHash string) (int, error) {
-	args := mss.Called(url, urlHash)
-	return args.Int(0), args.Error(1)
 }

@@ -1,10 +1,10 @@
 package app
 
 import (
-	"github.com/gorilla/mux"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3"
+	"net/http"
 	"urlshortner/pkg/config"
 	"urlshortner/pkg/elongator"
 	"urlshortner/pkg/http/router"
@@ -18,8 +18,10 @@ type services struct {
 	elongator elongator.Elongator
 }
 
-func initRouter(cfg config.Config, lgr *zap.Logger, newRelic *newrelic.Application, statsdClient reporters.StatsDClient) *mux.Router {
-	svc := initService(cfg, lgr)
+func initRouter(cfg config.Config, lgr *zap.Logger, newRelic *newrelic.Application, statsdClient reporters.StatsDClient) http.Handler {
+	str := initStore(cfg, lgr, newRelic)
+	svc := initService(cfg, lgr, str)
+
 	return router.NewRouter(
 		lgr,
 		newRelic,
@@ -29,9 +31,7 @@ func initRouter(cfg config.Config, lgr *zap.Logger, newRelic *newrelic.Applicati
 	)
 }
 
-func initService(cfg config.Config, lgr *zap.Logger) *services {
-	str := initStore(cfg, lgr)
-
+func initService(cfg config.Config, lgr *zap.Logger, str store.ShortenerStore) *services {
 	hashGenerator := shortener.NewHashGenerator(sha3.New512(), cfg.GetShortenerConfig().GetHashLength())
 	urlBuilder := shortener.NewURLBuilder(cfg.GetShortenerConfig().GetBaseURL())
 
@@ -41,7 +41,7 @@ func initService(cfg config.Config, lgr *zap.Logger) *services {
 	return &services{shortener: sh, elongator: el}
 }
 
-func initStore(cfg config.Config, lgr *zap.Logger) *store.Store {
+func initStore(cfg config.Config, lgr *zap.Logger, newRelic *newrelic.Application) store.ShortenerStore {
 	cacheHandler := store.NewCacheHandler(cfg.GetRedisConfig(), lgr)
 	cache, err := cacheHandler.GetCache()
 	if err != nil {
@@ -54,5 +54,8 @@ func initStore(cfg config.Config, lgr *zap.Logger) *store.Store {
 		lgr.Fatal(err.Error())
 	}
 
-	return store.NewStore(store.NewShortnerStore(cache, db, lgr))
+	sdb := store.NewShortenerDatabase(db, lgr, newRelic)
+	scc := store.NewShortenerCache(cache, lgr)
+
+	return store.NewShortenerStore(sdb, scc, lgr)
 }
