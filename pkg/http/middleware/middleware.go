@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"context"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 	"urlshortner/pkg/http/liberr"
 	"urlshortner/pkg/http/util"
 	"urlshortner/pkg/reporters"
@@ -26,27 +28,6 @@ func WithError(handler func(resp http.ResponseWriter, req *http.Request) error) 
 	}
 }
 
-func WithStatsD(statsd reporters.StatsDClient, api string, handler http.HandlerFunc) http.HandlerFunc {
-	return func(resp http.ResponseWriter, req *http.Request) {
-		// TODO CHANGE THIS
-		hasError := func(code int) bool {
-			return code >= 400 && code <= 600
-		}
-
-		statsd.ReportAttempt(api)
-
-		cr := util.NewCopyWriter(resp)
-
-		handler(cr, req)
-		if hasError(cr.Code()) {
-			statsd.ReportFailure(api)
-			return
-		}
-
-		statsd.ReportSuccess(api)
-	}
-}
-
 func WithReqRespLog(lgr *zap.Logger, handler http.HandlerFunc) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
 		cr := util.NewCopyWriter(resp)
@@ -64,5 +45,40 @@ func WithResponseHeaders(handler http.HandlerFunc) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
 		resp.Header().Set("Content-Type", "application/json")
 		handler(resp, req)
+	}
+}
+
+func WithRequestContext(handler http.HandlerFunc) http.HandlerFunc {
+	return func(resp http.ResponseWriter, req *http.Request) {
+		// TODO: CHANGE TEMP VALUE
+		ctx := context.WithValue(req.Context(), "key", "val")
+		handler(resp, req.WithContext(ctx))
+	}
+}
+
+func WithPrometheus(prometheus reporters.Prometheus, api string, handler http.HandlerFunc) http.HandlerFunc {
+	return func(resp http.ResponseWriter, req *http.Request) {
+		// TODO CHANGE THIS
+		hasError := func(code int) bool {
+			return code >= 400 && code <= 600
+		}
+
+		start := time.Now()
+		prometheus.ReportAttempt(api)
+
+		cr := util.NewCopyWriter(resp)
+
+		handler(cr, req)
+		if hasError(cr.Code()) {
+			duration := time.Since(start)
+			prometheus.Observe(api, duration.Seconds())
+			prometheus.ReportFailure(api)
+			return
+		}
+
+		duration := time.Since(start)
+		prometheus.Observe(api, duration.Seconds())
+
+		prometheus.ReportSuccess(api)
 	}
 }

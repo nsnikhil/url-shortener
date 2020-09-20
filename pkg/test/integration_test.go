@@ -110,7 +110,7 @@ func waitForServerWithRetry(cl *http.Client, retry int) {
 	}
 
 	for i := 1; i <= retry; i++ {
-		fmt.Println(err, i)
+		err := ping(cl)
 		if err == nil {
 			break
 		} else {

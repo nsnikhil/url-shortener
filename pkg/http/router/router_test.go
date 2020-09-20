@@ -18,7 +18,7 @@ func TestRouter(t *testing.T) {
 	r := router2.NewRouter(
 		zap.NewNop(),
 		&newrelic.Application{},
-		&reporters.MockStatsDClient{},
+		&reporters.MockPrometheus{},
 		&shortener.MockShortener{},
 		&elongator.MockElongator{},
 	)

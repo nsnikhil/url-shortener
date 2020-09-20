@@ -2,18 +2,22 @@ package reporters
 
 import "github.com/stretchr/testify/mock"
 
-type MockStatsDClient struct {
+type MockPrometheus struct {
 	mock.Mock
 }
 
-func (msc *MockStatsDClient) ReportAttempt(bucket string) {
-	msc.Called(bucket)
+func (mp *MockPrometheus) ReportAttempt(bucket string) {
+	mp.Called(bucket)
 }
 
-func (msc *MockStatsDClient) ReportSuccess(bucket string) {
-	msc.Called(bucket)
+func (mp *MockPrometheus) ReportSuccess(bucket string) {
+	mp.Called(bucket)
 }
 
-func (msc *MockStatsDClient) ReportFailure(bucket string) {
-	msc.Called(bucket)
+func (mp *MockPrometheus) ReportFailure(bucket string) {
+	mp.Called(bucket)
+}
+
+func (mp *MockPrometheus) Observe(bucket string, value float64) {
+	mp.Called(bucket, value)
 }

@@ -22,15 +22,15 @@ const (
 
 	pingPath     = "/ping"
 	shortenPath  = "/shorten"
-	redirectPath = "/{hash_code}"
-	metricPath   = "/metric"
+	redirectPath = "/{hash_code:[a-zA-Z]+}"
+	metricPath   = "/metrics"
 )
 
-func NewRouter(lgr *zap.Logger, newRelic *newrelic.Application, statsdClient reporters.StatsDClient, shortener shortener.Shortener, elongator elongator.Elongator) http.Handler {
-	return getChiRouter(lgr, newRelic, statsdClient, shortener, elongator)
+func NewRouter(lgr *zap.Logger, newRelic *newrelic.Application, prometheus reporters.Prometheus, shortener shortener.Shortener, elongator elongator.Elongator) http.Handler {
+	return getChiRouter(lgr, newRelic, prometheus, shortener, elongator)
 }
 
-func getChiRouter(lgr *zap.Logger, newRelic *newrelic.Application, statsdClient reporters.StatsDClient, shortener shortener.Shortener, elongator elongator.Elongator) *chi.Mux {
+func getChiRouter(lgr *zap.Logger, newRelic *newrelic.Application, pr reporters.Prometheus, shortener shortener.Shortener, elongator elongator.Elongator) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.Recoverer)
 	r.Use(nrgorilla.Middleware(newRelic))
@@ -38,20 +38,19 @@ func getChiRouter(lgr *zap.Logger, newRelic *newrelic.Application, statsdClient 
 	sh := handler.NewShortenHandler(shortener)
 	rh := handler.NewRedirectHandler(elongator)
 
-	r.Get(pingPath, withMiddlewares(lgr, statsdClient, pingAPI, handler.PingHandler()))
-
-	r.Post(shortenPath, withMiddlewares(lgr, statsdClient, shortenAPI, mdl.WithError(sh.Shorten)))
-	r.Get(redirectPath, withMiddlewares(lgr, statsdClient, redirectAPI, mdl.WithError(rh.Redirect)))
-
+	r.Get(pingPath, withMiddlewares(lgr, pr, pingAPI, handler.PingHandler()))
+	r.Post(shortenPath, withMiddlewares(lgr, pr, shortenAPI, mdl.WithError(sh.Shorten)))
 	r.Handle(metricPath, promhttp.Handler())
+
+	r.Get(redirectPath, withMiddlewares(lgr, pr, redirectAPI, mdl.WithError(rh.Redirect)))
 
 	return r
 }
 
-func withMiddlewares(lgr *zap.Logger, statsdClient reporters.StatsDClient, api string, handler func(resp http.ResponseWriter, req *http.Request)) http.HandlerFunc {
+func withMiddlewares(lgr *zap.Logger, prometheus reporters.Prometheus, api string, handler func(resp http.ResponseWriter, req *http.Request)) http.HandlerFunc {
 	return mdl.WithReqRespLog(lgr,
 		mdl.WithResponseHeaders(
-			mdl.WithStatsD(statsdClient, api, handler),
+			mdl.WithPrometheus(prometheus, api, handler),
 		),
 	)
 }

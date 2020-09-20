@@ -20,14 +20,14 @@ type services struct {
 	elongator elongator.Elongator
 }
 
-func initRouter(cfg config.Config, lgr *zap.Logger, newRelic *newrelic.Application, statsdClient reporters.StatsDClient) http.Handler {
+func initRouter(cfg config.Config, lgr *zap.Logger, newRelic *newrelic.Application, prometheus reporters.Prometheus) http.Handler {
 	str := initStore(cfg, lgr, newRelic)
 	svc := initService(cfg, lgr, str)
 
 	return router.NewRouter(
 		lgr,
 		newRelic,
-		statsdClient,
+		prometheus,
 		svc.shortener,
 		svc.elongator,
 	)

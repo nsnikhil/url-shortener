@@ -10,8 +10,8 @@ func Start() {
 	cfg := config.NewConfig()
 	lgr := initLogger(cfg)
 	nr := reporters.NewNewRelicApp(cfg.GetNewRelicConfig())
-	sd := reporters.NewStatsDClient(cfg.GetStatsDConfig())
+	pr := reporters.NewPrometheus()
 
-	rt := initRouter(cfg, lgr, nr, sd)
+	rt := initRouter(cfg, lgr, nr, pr)
 	server.NewServer(cfg, lgr, rt).Start()
 }
