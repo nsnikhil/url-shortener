@@ -1,18 +1,12 @@
 package handler
 
 import (
-	"bytes"
-	"go.uber.org/zap"
 	"net/http"
-	"urlshortner/pkg/reporters"
+	"urlshortner/pkg/http/util"
 )
 
-func PingHandler(lgr *zap.Logger, statsdClient reporters.StatsDClient) http.HandlerFunc {
+func PingHandler() http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		statsdClient.ReportAttempt(pingAPI)
-
-		writeResponse(http.StatusOK, bytes.NewBufferString("pong").Bytes(), resp, lgr)
-
-		statsdClient.ReportSuccess(pingAPI)
+		util.WriteSuccessResponse(http.StatusOK, "pong", resp)
 	}
 }

@@ -3,39 +3,49 @@ package reporters
 import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/natefinch/lumberjack.v2"
-	"urlshortner/pkg/config"
+	"io"
 )
 
-func getLogger(cfg config.LogConfig) *zap.Logger {
+const production = "production"
+
+var levelMap = map[string]zapcore.Level{
+	"debug": zapcore.DebugLevel,
+	"info":  zapcore.InfoLevel,
+	"warn":  zapcore.WarnLevel,
+	"error": zapcore.ErrorLevel,
+}
+
+func NewLogger(env, level string, writers ...io.Writer) *zap.Logger {
 	core := zapcore.NewCore(
-		getEncoder(),
-		getWriteSyncer(cfg),
-		getLogLevel(),
+		zapcore.NewJSONEncoder(encoderConfig(env)),
+		zapcore.NewMultiWriteSyncer(writeSyncers(writers...)...),
+		zap.NewAtomicLevelAt(logLevel(level)),
 	)
 
 	return zap.New(core)
 }
 
-func getWriteSyncer(cfg config.LogConfig) zapcore.WriteSyncer {
-	return zapcore.AddSync(&lumberjack.Logger{
-		Filename:   cfg.GetFilePath(),
-		MaxSize:    cfg.GetFileMaxSizeInMb(),
-		MaxBackups: cfg.GetFileMaxBackups(),
-		MaxAge:     cfg.GetFileMaxAge(),
-		LocalTime:  cfg.GetFileWithLocalTimeStamp(),
-	})
+func writeSyncers(writers ...io.Writer) []zapcore.WriteSyncer {
+	var res []zapcore.WriteSyncer
+	for _, w := range writers {
+		res = append(res, zapcore.AddSync(w))
+	}
+	return res
 }
 
-func getLogLevel() zapcore.LevelEnabler {
-	// TODO PICK FROM CONFIG
-	return zap.InfoLevel
+func logLevel(level string) zapcore.Level {
+	l, ok := levelMap[level]
+	if !ok {
+		return zapcore.InfoLevel
+	}
+
+	return l
 }
 
-func getEncoder() zapcore.Encoder {
-	return zapcore.NewJSONEncoder(getLogConfig())
-}
+func encoderConfig(env string) zapcore.EncoderConfig {
+	if env == production {
+		return zap.NewProductionEncoderConfig()
+	}
 
-func getLogConfig() zapcore.EncoderConfig {
-	return zap.NewProductionEncoderConfig()
+	return zap.NewDevelopmentEncoderConfig()
 }

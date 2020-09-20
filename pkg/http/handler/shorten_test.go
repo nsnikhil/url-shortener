@@ -6,13 +6,12 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"urlshortner/pkg/http/contract"
 	"urlshortner/pkg/http/handler"
-	"urlshortner/pkg/reporters"
+	"urlshortner/pkg/http/middleware"
 	"urlshortner/pkg/shortener"
 )
 
@@ -26,7 +25,7 @@ func TestShortenHandler(t *testing.T) {
 		{
 			name: "test shorten handler success",
 			actualResult: func() (string, int) {
-				req := contract.ShortenRequest{URL: "veryLongUrl.com"}
+				req := contract.ShortenRequest{URL: "wikipedia.com"}
 				b, err := json.Marshal(req)
 				require.NoError(t, err)
 
@@ -35,18 +34,15 @@ func TestShortenHandler(t *testing.T) {
 				require.NoError(t, err)
 
 				mockShortener := &shortener.MockShortener{}
-				mockShortener.On("Shorten", "veryLongUrl.com").Return("sht.ly/abc", nil)
+				mockShortener.On("Shorten", "wikipedia.com").Return("sht.ly/abc", nil)
 
-				mockStatsD := &reporters.MockStatsDClient{}
-				mockStatsD.On("ReportAttempt", "shorten")
-				mockStatsD.On("ReportSuccess", "shorten")
-
-				handler.ShortenHandler(zap.NewNop(), mockStatsD, mockShortener)(w, r)
+				sh := handler.NewShortenHandler(mockShortener)
+				middleware.WithError(sh.Shorten)(w, r)
 
 				return w.Body.String(), w.Code
 			},
-			expectedResult: "{\"short_url\":\"sht.ly/abc\"}",
-			expectedCode:   http.StatusOK,
+			expectedResult: "{\"data\":{\"short_url\":\"sht.ly/abc\"},\"error\":{},\"success\":true}",
+			expectedCode:   http.StatusCreated,
 		},
 		{
 			name: "test shorten handler fail when body is nil",
@@ -57,15 +53,12 @@ func TestShortenHandler(t *testing.T) {
 
 				mockShortener := &shortener.MockShortener{}
 
-				mockStatsD := &reporters.MockStatsDClient{}
-				mockStatsD.On("ReportAttempt", "shorten")
-				mockStatsD.On("ReportFailure", "shorten")
-
-				handler.ShortenHandler(zap.NewNop(), mockStatsD, mockShortener)(w, r)
+				sh := handler.NewShortenHandler(mockShortener)
+				middleware.WithError(sh.Shorten)(w, r)
 
 				return w.Body.String(), w.Code
 			},
-			expectedResult: "body is nil",
+			expectedResult: "{\"error\":{\"code\":\"usx0001\",\"message\":\"request body is nil\"},\"success\":false}",
 			expectedCode:   http.StatusBadRequest,
 		},
 		{
@@ -77,21 +70,18 @@ func TestShortenHandler(t *testing.T) {
 
 				mockShortener := &shortener.MockShortener{}
 
-				mockStatsD := &reporters.MockStatsDClient{}
-				mockStatsD.On("ReportAttempt", "shorten")
-				mockStatsD.On("ReportFailure", "shorten")
-
-				handler.ShortenHandler(zap.NewNop(), mockStatsD, mockShortener)(w, r)
+				sh := handler.NewShortenHandler(mockShortener)
+				middleware.WithError(sh.Shorten)(w, r)
 
 				return w.Body.String(), w.Code
 			},
-			expectedResult: "invalid character 'i' looking for beginning of value",
+			expectedResult: "{\"error\":{\"code\":\"usx0001\",\"message\":\"invalid character 'i' looking for beginning of value\"},\"success\":false}",
 			expectedCode:   http.StatusBadRequest,
 		},
 		{
 			name: "test shorten handler fail when service returns error",
 			actualResult: func() (string, int) {
-				req := contract.ShortenRequest{URL: "veryLongUrl.com"}
+				req := contract.ShortenRequest{URL: "wikipedia.com"}
 				b, err := json.Marshal(req)
 				require.NoError(t, err)
 
@@ -100,17 +90,14 @@ func TestShortenHandler(t *testing.T) {
 				require.NoError(t, err)
 
 				mockShortener := &shortener.MockShortener{}
-				mockShortener.On("Shorten", "veryLongUrl.com").Return("", errors.New("fail to shorten url"))
+				mockShortener.On("Shorten", "wikipedia.com").Return("", errors.New("fail to shorten url"))
 
-				mockStatsD := &reporters.MockStatsDClient{}
-				mockStatsD.On("ReportAttempt", "shorten")
-				mockStatsD.On("ReportFailure", "shorten")
-
-				handler.ShortenHandler(zap.NewNop(), mockStatsD, mockShortener)(w, r)
+				sh := handler.NewShortenHandler(mockShortener)
+				middleware.WithError(sh.Shorten)(w, r)
 
 				return w.Body.String(), w.Code
 			},
-			expectedResult: "fail to shorten url",
+			expectedResult: "{\"error\":{\"code\":\"usx0010\",\"message\":\"fail to shorten url\"},\"success\":false}",
 			expectedCode:   http.StatusInternalServerError,
 		},
 	}

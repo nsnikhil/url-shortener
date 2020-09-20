@@ -42,9 +42,15 @@ clean:
 copy-config:
 	cp .env.sample local.env
 
-test:
+unit-test:
 	go clean -testcache
 	go test ./... -v
+
+integration-test:
+	go clean -testcache
+	go test --tags=integration ./pkg/test -v
+
+test: unit-test integration-test
 
 test-cover-html:
 	go clean -testcache

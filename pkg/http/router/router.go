@@ -5,18 +5,25 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/newrelic/go-agent/v3/integrations/nrgorilla"
 	"github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"net/http"
 	"urlshortner/pkg/elongator"
 	"urlshortner/pkg/http/handler"
+	mdl "urlshortner/pkg/http/middleware"
 	"urlshortner/pkg/reporters"
 	"urlshortner/pkg/shortener"
 )
 
 const (
+	pingAPI     = "ping"
+	shortenAPI  = "shorten"
+	redirectAPI = "redirect"
+
 	pingPath     = "/ping"
 	shortenPath  = "/shorten"
 	redirectPath = "/{hash_code}"
+	metricPath   = "/metric"
 )
 
 func NewRouter(lgr *zap.Logger, newRelic *newrelic.Application, statsdClient reporters.StatsDClient, shortener shortener.Shortener, elongator elongator.Elongator) http.Handler {
@@ -28,9 +35,23 @@ func getChiRouter(lgr *zap.Logger, newRelic *newrelic.Application, statsdClient 
 	r.Use(middleware.Recoverer)
 	r.Use(nrgorilla.Middleware(newRelic))
 
-	r.Get(pingPath, handler.PingHandler(lgr, statsdClient))
-	r.Post(shortenPath, handler.ShortenHandler(lgr, statsdClient, shortener))
-	r.Get(redirectPath, handler.RedirectHandler(lgr, statsdClient, elongator))
+	sh := handler.NewShortenHandler(shortener)
+	rh := handler.NewRedirectHandler(elongator)
+
+	r.Get(pingPath, withMiddlewares(lgr, statsdClient, pingAPI, handler.PingHandler()))
+
+	r.Post(shortenPath, withMiddlewares(lgr, statsdClient, shortenAPI, mdl.WithError(sh.Shorten)))
+	r.Get(redirectPath, withMiddlewares(lgr, statsdClient, redirectAPI, mdl.WithError(rh.Redirect)))
+
+	r.Handle(metricPath, promhttp.Handler())
 
 	return r
+}
+
+func withMiddlewares(lgr *zap.Logger, statsdClient reporters.StatsDClient, api string, handler func(resp http.ResponseWriter, req *http.Request)) http.HandlerFunc {
+	return mdl.WithReqRespLog(lgr,
+		mdl.WithResponseHeaders(
+			mdl.WithStatsD(statsdClient, api, handler),
+		),
+	)
 }

@@ -4,7 +4,9 @@ import (
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3"
+	"io"
 	"net/http"
+	"os"
 	"urlshortner/pkg/config"
 	"urlshortner/pkg/elongator"
 	"urlshortner/pkg/http/router"
@@ -58,4 +60,19 @@ func initStore(cfg config.Config, lgr *zap.Logger, newRelic *newrelic.Applicatio
 	scc := store.NewShortenerCache(cache, lgr)
 
 	return store.NewShortenerStore(sdb, scc, lgr)
+}
+
+func initLogger(cfg config.Config) *zap.Logger {
+	return reporters.NewLogger(
+		cfg.GetEnv(),
+		cfg.GetLogConfig().GetLevel(),
+		getWriters()...,
+	)
+}
+
+func getWriters() []io.Writer {
+	// TODO ADD LUMBERJACK
+	return []io.Writer{
+		os.Stdout,
+	}
 }

@@ -8,7 +8,10 @@ import (
 
 func Start() {
 	cfg := config.NewConfig()
-	rp := reporters.NewReporters(cfg)
-	rt := initRouter(cfg, rp.GetLogger(), rp.GetNewrelic(), rp.GetStatsD())
-	server.NewServer(cfg, rp.GetLogger(), rt).Start()
+	lgr := initLogger(cfg)
+	nr := reporters.NewNewRelicApp(cfg.GetNewRelicConfig())
+	sd := reporters.NewStatsDClient(cfg.GetStatsDConfig())
+
+	rt := initRouter(cfg, lgr, nr, sd)
+	server.NewServer(cfg, lgr, rt).Start()
 }

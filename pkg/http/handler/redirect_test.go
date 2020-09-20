@@ -4,13 +4,12 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"urlshortner/pkg/elongator"
 	"urlshortner/pkg/http/handler"
-	"urlshortner/pkg/reporters"
+	"urlshortner/pkg/http/middleware"
 )
 
 func TestRedirectHandler(t *testing.T) {
@@ -28,17 +27,14 @@ func TestRedirectHandler(t *testing.T) {
 				require.NoError(t, err)
 
 				mockElongator := &elongator.MockElongator{}
-				mockElongator.On("Elongate", "abc").Return("veryLongUrl.com", nil)
+				mockElongator.On("Elongate", "abc").Return("wikipedia.com", nil)
 
-				mockStatsD := &reporters.MockStatsDClient{}
-				mockStatsD.On("ReportAttempt", "redirect")
-				mockStatsD.On("ReportSuccess", "redirect")
-
-				handler.RedirectHandler(zap.NewNop(), mockStatsD, mockElongator)(w, r)
+				rh := handler.NewRedirectHandler(mockElongator)
+				middleware.WithError(rh.Redirect)(w, r)
 
 				return w.Header(), w.Code
 			},
-			expectedHeader:     http.Header{"Location": []string{"veryLongUrl.com"}},
+			expectedHeader:     http.Header{"Location": []string{"wikipedia.com"}},
 			expectedStatusCode: http.StatusMovedPermanently,
 		},
 		{
@@ -51,11 +47,8 @@ func TestRedirectHandler(t *testing.T) {
 				mockElongator := &elongator.MockElongator{}
 				mockElongator.On("Elongate", "abc").Return("na", errors.New("invalid hash"))
 
-				mockStatsD := &reporters.MockStatsDClient{}
-				mockStatsD.On("ReportAttempt", "redirect")
-				mockStatsD.On("ReportFailure", "redirect")
-
-				handler.RedirectHandler(zap.NewNop(), mockStatsD, mockElongator)(w, r)
+				rh := handler.NewRedirectHandler(mockElongator)
+				middleware.WithError(rh.Redirect)(w, r)
 
 				return w.Header(), w.Code
 			},

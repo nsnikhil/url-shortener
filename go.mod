@@ -3,6 +3,7 @@ module urlshortner
 go 1.15
 
 require (
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-redis/redis/v8 v8.0.0-beta.9
@@ -17,6 +18,7 @@ require (
 	github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.0
 	github.com/newrelic/go-agent/v3/integrations/nrpq v1.1.0
 	github.com/pelletier/go-toml v1.8.0 // indirect
+	github.com/prometheus/client_golang v1.7.1
 	github.com/spf13/afero v1.3.5 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect

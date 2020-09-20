@@ -6,7 +6,7 @@ import (
 	"urlshortner/pkg/config"
 )
 
-func getNewRelic(nrc config.NewRelicConfig) *newrelic.Application {
+func NewNewRelicApp(nrc config.NewRelicConfig) *newrelic.Application {
 	var err error
 	var nrApp *newrelic.Application
 

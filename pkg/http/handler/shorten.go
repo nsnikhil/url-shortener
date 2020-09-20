@@ -1,40 +1,37 @@
 package handler
 
 import (
-	"encoding/json"
-	"go.uber.org/zap"
 	"net/http"
 	"urlshortner/pkg/http/contract"
-	"urlshortner/pkg/reporters"
+	"urlshortner/pkg/http/liberr"
+	"urlshortner/pkg/http/util"
 	"urlshortner/pkg/shortener"
 )
 
-func ShortenHandler(lgr *zap.Logger, statsdClient reporters.StatsDClient, shortener shortener.Shortener) http.HandlerFunc {
-	return func(resp http.ResponseWriter, req *http.Request) {
-		statsdClient.ReportAttempt(shortenAPI)
+type ShortenHandler struct {
+	shortener shortener.Shortener
+}
 
-		var shortenReq contract.ShortenRequest
-		err := parseRequest(resp, req, &shortenReq, lgr, shortenAPI, statsdClient)
-		if err != nil {
-			return
-		}
+func (sh *ShortenHandler) Shorten(resp http.ResponseWriter, req *http.Request) error {
+	var shortenReq contract.ShortenRequest
+	err := util.ParseRequest(req, &shortenReq)
+	if err != nil {
+		return liberr.ValidationError(err.Error())
+	}
 
-		shortURL, err := shortener.Shorten(shortenReq.URL)
-		if err != nil {
-			handleError(http.StatusInternalServerError, err, resp, false, lgr, shortenAPI, statsdClient)
-			return
-		}
+	shortURL, err := sh.shortener.Shorten(shortenReq.URL)
+	if err != nil {
+		return liberr.InternalError(err.Error())
+	}
 
-		shortenResp := contract.ShortenResponse{ShortURL: shortURL}
+	shortenResp := contract.ShortenResponse{ShortURL: shortURL}
 
-		data, err := json.Marshal(&shortenResp)
-		if err != nil {
-			handleError(http.StatusInternalServerError, err, resp, true, lgr, shortenAPI, statsdClient)
-			return
-		}
+	util.WriteSuccessResponse(http.StatusCreated, shortenResp, resp)
+	return nil
+}
 
-		writeResponse(http.StatusOK, data, resp, lgr)
-
-		statsdClient.ReportSuccess(shortenAPI)
+func NewShortenHandler(shortener shortener.Shortener) *ShortenHandler {
+	return &ShortenHandler{
+		shortener: shortener,
 	}
 }

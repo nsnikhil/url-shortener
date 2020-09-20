@@ -34,21 +34,31 @@ func (dsc *defaultStatsDClient) ReportFailure(bucket string) {
 	incBucket(bucket, failure, dsc.client)
 }
 
-func newStatsDClient(client *statsd.Client) StatsDClient {
-	return &defaultStatsDClient{
-		client: client,
-	}
+func (dsc *defaultStatsDClient) NewTiming() statsd.Timing {
+	return dsc.client.NewTiming()
 }
 
 func incBucket(api, call string, cl *statsd.Client) {
+	if cl == nil {
+		// TODO LOG THIS
+		fmt.Printf("failed to report %s.%s\n", api, call)
+		return
+	}
+
 	cl.Increment(fmt.Sprintf("%s.%s.counter", api, call))
 }
 
-func getStatsD(sdc config.StatsDConfig) *statsd.Client {
+func NewStatsDClient(cfg config.StatsDConfig) StatsDClient {
+	return &defaultStatsDClient{
+		client: getStatsD(cfg),
+	}
+}
+
+func getStatsD(cfg config.StatsDConfig) *statsd.Client {
 	var err error
 	var sc *statsd.Client
 
-	sc, err = statsd.New(statsd.Address(sdc.GetAddress()), statsd.Prefix(sdc.GetNamespace()))
+	sc, err = statsd.New(statsd.Address(cfg.GetAddress()), statsd.Prefix(cfg.GetNamespace()))
 	if err != nil {
 		fmt.Println(err)
 		return nil

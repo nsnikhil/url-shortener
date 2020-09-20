@@ -1,3 +1,5 @@
+// +build integration
+
 package test_test
 
 import (
@@ -43,7 +45,7 @@ func TestShortenerAPI(t *testing.T) {
 func testPingRequest(t *testing.T, cl *http.Client) {
 	req := getPingRequest(t)
 	resp := doPingRequest(t, cl, req)
-	assert.Equal(t, "pong", resp)
+	assert.Equal(t, "{\"data\":\"pong\",\"error\":{},\"success\":true}", resp)
 }
 
 func testRedirectSuccess(t *testing.T, cl *http.Client) {
@@ -81,7 +83,7 @@ func testNotPresent(t *testing.T, cl *http.Client) {
 	require.NoError(t, err)
 
 	assert.Equal(t, http.StatusInternalServerError, redResp.StatusCode)
-	assert.Equal(t, "sql: no rows in result set", string(d))
+	assert.Equal(t, "{\"error\":{\"code\":\"usx0010\",\"message\":\"sql: no rows in result set\"},\"success\":false}", string(d))
 }
 
 func getClient() *http.Client {
@@ -108,7 +110,7 @@ func waitForServerWithRetry(cl *http.Client, retry int) {
 	}
 
 	for i := 1; i <= retry; i++ {
-		err := ping(cl)
+		fmt.Println(err, i)
 		if err == nil {
 			break
 		} else {
@@ -136,13 +138,20 @@ func cleanUp(t *testing.T) {
 func doShortenRequest(t *testing.T, cl *http.Client, req *http.Request) contract.ShortenResponse {
 	resp := doHTTPRequest(t, cl, req)
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	data, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
+	var apiResp contract.APIResponse
+	err = json.Unmarshal(data, &apiResp)
+	require.NoError(t, err)
+
+	b, err := json.Marshal(apiResp.Data)
+	require.NoError(t, err)
+
 	var shtResp contract.ShortenResponse
-	err = json.Unmarshal(data, &shtResp)
+	err = json.Unmarshal(b, &shtResp)
 	require.NoError(t, err)
 
 	return shtResp
