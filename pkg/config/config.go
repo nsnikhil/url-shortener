@@ -15,6 +15,7 @@ type Config struct {
 	redisConfig     RedisConfig
 	databaseConfig  DatabaseConfig
 	logConfig       LogConfig
+	logFileConfig   LogFileConfig
 }
 
 func (c Config) GetServerConfig() ServerConfig {
@@ -48,8 +49,13 @@ func (c Config) GetRedisConfig() RedisConfig {
 func (c Config) GetDatabaseConfig() DatabaseConfig {
 	return c.databaseConfig
 }
+
 func (c Config) GetLogConfig() LogConfig {
 	return c.logConfig
+}
+
+func (c Config) GetLogFileConfig() LogFileConfig {
+	return c.logFileConfig
 }
 
 func NewConfig() Config {
@@ -76,5 +82,6 @@ func NewConfig() Config {
 		redisConfig:     newRedisConfig(),
 		databaseConfig:  newDatabaseConfig(),
 		logConfig:       newLogConfig(),
+		logFileConfig:   newLogFileConfig(),
 	}
 }

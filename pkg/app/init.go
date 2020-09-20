@@ -66,13 +66,14 @@ func initLogger(cfg config.Config) *zap.Logger {
 	return reporters.NewLogger(
 		cfg.GetEnv(),
 		cfg.GetLogConfig().GetLevel(),
-		getWriters()...,
+		getWriters(cfg.GetLogFileConfig())...,
 	)
 }
 
-func getWriters() []io.Writer {
-	// TODO ADD LUMBERJACK
+func getWriters(cfg config.LogFileConfig) []io.Writer {
+	// TODO CHANGE LUMBERJACK
 	return []io.Writer{
 		os.Stdout,
+		reporters.NewExternalLogFile(cfg),
 	}
 }
