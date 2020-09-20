@@ -1,4 +1,4 @@
-package main
+package store
 
 import (
 	"fmt"
@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"urlshortner/pkg/config"
-	"urlshortner/pkg/store"
 )
 
 const (
@@ -19,7 +18,7 @@ const (
 	databaseName = "postgres"
 )
 
-func runMigrations() {
+func RunMigrations() {
 	newMigrate, err := newMigrate()
 	if err != nil {
 		fmt.Println(err)
@@ -35,7 +34,7 @@ func runMigrations() {
 	}
 }
 
-func rollBackMigrations() {
+func RollBackMigrations() {
 	newMigrate, err := newMigrate()
 	if err != nil {
 		fmt.Println(err)
@@ -52,7 +51,7 @@ func rollBackMigrations() {
 func newMigrate() (*migrate.Migrate, error) {
 	cfg := config.NewConfig()
 
-	dbHandler := store.NewDBHandler(cfg.GetDatabaseConfig(), zap.NewExample())
+	dbHandler := NewDBHandler(cfg.GetDatabaseConfig(), zap.NewExample())
 
 	db, err := dbHandler.GetDB()
 	if err != nil {

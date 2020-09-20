@@ -1,6 +1,10 @@
 package main
 
-import "log"
+import (
+	"log"
+	"urlshortner/pkg/app"
+	"urlshortner/pkg/store"
+)
 
 const (
 	serveCommand    = "serve"
@@ -10,9 +14,9 @@ const (
 
 func commands() map[string]func() {
 	return map[string]func(){
-		serveCommand:    serve,
-		migrateCommand:  runMigrations,
-		rollbackCommand: rollBackMigrations,
+		serveCommand:    app.Start,
+		migrateCommand:  store.RunMigrations,
+		rollbackCommand: store.RollBackMigrations,
 	}
 }
 
