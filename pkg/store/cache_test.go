@@ -60,7 +60,7 @@ func TestUrlShortenerCacheGet(t *testing.T) {
 				err := cache.Save("wikipedia.com", urlHash, 1)
 				require.NoError(t, err)
 
-				time.Sleep(time.Second)
+				time.Sleep(time.Second * 2)
 				return cache.Get(urlHash)
 			},
 			expectedResult: "",
