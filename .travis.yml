@@ -5,7 +5,7 @@ go:
 
 services:
   - docker
-  - redis
+  - redis-server
   - postgresql
 
 jobs:
