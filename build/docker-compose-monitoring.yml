@@ -7,6 +7,8 @@ services:
     restart: always
     ports:
       - 9090:9090
+    networks:
+      - shortenernetwork
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     volumes:
@@ -16,6 +18,8 @@ services:
     image: gcr.io/google-containers/cadvisor:latest
     ports:
       - 8082:8080
+    networks:
+      - shortenernetwork
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
@@ -27,36 +31,9 @@ services:
   grafana:
     image: grafana/grafana:latest
     restart: always
+    networks:
+      - shortenernetwork
     ports:
       - 3000:3000
     depends_on:
       - prometheus
-
-  db:
-    image: postgres:alpine
-    restart: always
-    environment:
-      POSTGRES_DB: shortener_db
-      POSTGRES_USER: shortener_user
-      POSTGRES_PASSWORD: shortener_password
-    ports:
-      - 8081:5432
-    volumes:
-      - ../pkg/store/migrations/:/docker-entrypoint-initdb.d/
-
-  redis:
-    image: redis:latest
-    ports:
-      - 6379:6379
-
-  urlshortener:
-    image: nsnikhil/urlshortener:0.1
-    restart: always
-    ports:
-      - 8080:8080
-    env_file:
-      - local.env
-    depends_on:
-      - db
-      - redis
-      - grafana

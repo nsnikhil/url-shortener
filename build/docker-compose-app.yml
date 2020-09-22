@@ -1,0 +1,19 @@
+version: '3.7'
+
+services:
+
+  urlshortener:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 8080:8080
+    env_file:
+      - local.env
+    networks:
+      - shortenernetwork
+    depends_on:
+      - db
+      - redis
+      - grafana

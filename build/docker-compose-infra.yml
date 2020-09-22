@@ -1,0 +1,24 @@
+version: '3.7'
+
+services:
+
+  db:
+    image: postgres:alpine
+    restart: always
+    environment:
+      POSTGRES_DB: shortener_db
+      POSTGRES_USER: shortener_user
+      POSTGRES_PASSWORD: shortener_password
+    networks:
+      - shortenernetwork
+    ports:
+      - 8081:5432
+    volumes:
+      - ../pkg/store/migrations/:/docker-entrypoint-initdb.d/
+
+  redis:
+    image: redis:latest
+    networks:
+      - shortenernetwork
+    ports:
+      - 6379:6379
