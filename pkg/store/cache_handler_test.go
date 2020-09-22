@@ -1,7 +1,6 @@
 package store_test
 
 import (
-	"errors"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"testing"
@@ -11,9 +10,9 @@ import (
 
 func TestGetCache(t *testing.T) {
 	testCases := []struct {
-		name          string
-		actualResult  func() error
-		expectedError error
+		name         string
+		actualResult func() error
+		hasError     bool
 	}{
 		{
 			name: "test get cache success",
@@ -22,6 +21,7 @@ func TestGetCache(t *testing.T) {
 				_, err := handler.GetCache()
 				return err
 			},
+			hasError: false,
 		},
 		{
 			name: "test get cache failure",
@@ -30,16 +30,16 @@ func TestGetCache(t *testing.T) {
 				_, err := handler.GetCache()
 				return err
 			},
-			expectedError: errors.New("dial tcp :0: connect: can't assign requested address"),
+			hasError:      true,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			if testCase.expectedError == nil {
-				assert.Equal(t, testCase.expectedError, testCase.actualResult())
+			if testCase.hasError {
+				assert.NotNil(t, testCase.actualResult())
 			} else {
-				assert.Equal(t, testCase.expectedError.Error(), testCase.actualResult().Error())
+				assert.Nil(t, testCase.actualResult())
 			}
 		})
 	}
