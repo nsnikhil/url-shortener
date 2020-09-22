@@ -10,8 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"urlshortner/pkg/http/contract"
-	"urlshortner/pkg/http/handler"
-	"urlshortner/pkg/http/middleware"
+	"urlshortner/pkg/http/internal/handler"
+	"urlshortner/pkg/http/internal/middleware"
 	"urlshortner/pkg/shortener"
 )
 

@@ -4,7 +4,7 @@ import (
 	"github.com/bmizerany/assert"
 	"net/http"
 	"testing"
-	"urlshortner/pkg/http/liberr"
+	"urlshortner/pkg/http/internal/liberr"
 )
 
 func TestGenericErrorGetErrorCode(t *testing.T) {

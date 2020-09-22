@@ -11,8 +11,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"urlshortner/pkg/http/liberr"
-	"urlshortner/pkg/http/middleware"
+	"urlshortner/pkg/http/internal/liberr"
+	"urlshortner/pkg/http/internal/middleware"
 	"urlshortner/pkg/reporters"
 )
 

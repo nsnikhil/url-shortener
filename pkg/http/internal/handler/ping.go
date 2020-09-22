@@ -2,7 +2,7 @@ package handler
 
 import (
 	"net/http"
-	"urlshortner/pkg/http/util"
+	"urlshortner/pkg/http/internal/util"
 )
 
 func PingHandler() http.HandlerFunc {

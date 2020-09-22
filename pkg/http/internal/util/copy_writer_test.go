@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"urlshortner/pkg/http/util"
+	"urlshortner/pkg/http/internal/util"
 )
 
 func TestCopyWriterWrite(t *testing.T) {

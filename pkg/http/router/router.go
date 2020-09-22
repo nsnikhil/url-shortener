@@ -9,8 +9,8 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"urlshortner/pkg/elongator"
-	"urlshortner/pkg/http/handler"
-	mdl "urlshortner/pkg/http/middleware"
+	"urlshortner/pkg/http/internal/handler"
+	mdl "urlshortner/pkg/http/internal/middleware"
 	"urlshortner/pkg/reporters"
 	"urlshortner/pkg/shortener"
 )

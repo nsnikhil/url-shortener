@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"urlshortner/pkg/http/contract"
-	"urlshortner/pkg/http/liberr"
+	"urlshortner/pkg/http/internal/liberr"
 )
 
 func writeResponse(code int, data []byte, resp http.ResponseWriter) {

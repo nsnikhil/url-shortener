@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 	"urlshortner/pkg/elongator"
-	"urlshortner/pkg/http/liberr"
+	"urlshortner/pkg/http/internal/liberr"
 )
 
 const locationHeader = "Location"

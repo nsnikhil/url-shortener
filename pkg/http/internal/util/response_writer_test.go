@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"urlshortner/pkg/http/liberr"
-	"urlshortner/pkg/http/util"
+	"urlshortner/pkg/http/internal/liberr"
+	"urlshortner/pkg/http/internal/util"
 )
 
 func TestWriteSuccessResponse(t *testing.T) {

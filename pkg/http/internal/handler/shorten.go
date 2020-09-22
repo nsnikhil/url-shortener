@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 	"urlshortner/pkg/http/contract"
-	"urlshortner/pkg/http/liberr"
-	"urlshortner/pkg/http/util"
+	"urlshortner/pkg/http/internal/liberr"
+	"urlshortner/pkg/http/internal/util"
 	"urlshortner/pkg/shortener"
 )
 

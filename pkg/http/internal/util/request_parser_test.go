@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
-	"urlshortner/pkg/http/util"
+	"urlshortner/pkg/http/internal/util"
 )
 
 func TestParseRequest(t *testing.T) {

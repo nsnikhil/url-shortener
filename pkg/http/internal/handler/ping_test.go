@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"urlshortner/pkg/http/handler"
+	"urlshortner/pkg/http/internal/handler"
 )
 
 func TestPingHandler(t *testing.T) {

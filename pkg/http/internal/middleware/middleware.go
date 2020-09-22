@@ -5,8 +5,8 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"time"
-	"urlshortner/pkg/http/liberr"
-	"urlshortner/pkg/http/util"
+	"urlshortner/pkg/http/internal/liberr"
+	"urlshortner/pkg/http/internal/util"
 	"urlshortner/pkg/reporters"
 )
 

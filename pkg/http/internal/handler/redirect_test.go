@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"urlshortner/pkg/elongator"
-	"urlshortner/pkg/http/handler"
-	"urlshortner/pkg/http/middleware"
+	"urlshortner/pkg/http/internal/handler"
+	"urlshortner/pkg/http/internal/middleware"
 )
 
 func TestRedirectHandler(t *testing.T) {
